@@ -1,0 +1,94 @@
+name: take-home-test
+
+services:
+  thirdparty:
+    build: ./thirdpartymock
+    ports:
+      - "3000:3000"
+
+  client:
+    build: ./client
+    environment:
+      YOUR_API: "http://api:3400"
+    ports:
+      - "3100:3100"
+
+  api:
+    image: node:20.11.1
+    container_name: api
+    restart: always
+    working_dir: /app
+    environment:
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/djamo?schema=public"
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: "redis"
+      REDIS_DATABASE: "redis"
+    ports:
+      - "3400:3000"
+    links:
+      - postgres
+      - redis
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./api:/app
+    command: bash -c "yarn && yarn start:dev"
+
+  postgres:
+    image: postgres
+    container_name: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "djamo"
+    volumes:
+      - data:/var/lib/postgres 
+      - ./api/prisma/migrations/20241205220645_init:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+   
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    restart: always
+    links:
+      - postgres
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      PGADMIN_DEFAULT_PASSWORD: "root"
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: "postgres"
+      PG_PASSWORD: "postgres"
+      PG_DB_NAME: "djamo"
+      DB_CONNECTION: "pg"
+    ports:
+      - "8000:80"
+
+  redis:
+    image: redis:alpine
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 20 1 --loglevel warning
+    volumes:
+      - cache:/data
+
+  redis-commander:
+    image: ghcr.io/joeferner/redis-commander:latest
+    container_name: redis-commander
+    restart: always
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "8081:8081"
+
+volumes:
+  data:
+  cache:
