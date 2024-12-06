@@ -3,7 +3,6 @@ CREATE TABLE "Transaction" (
     "id" SERIAL NOT NULL,
     "transactionID" TEXT NOT NULL,
     "status" TEXT NOT NULL,
-    "process_status" TEXT NOT NULL,
 
     CONSTRAINT "Transaction_pkey" PRIMARY KEY ("id")
 );

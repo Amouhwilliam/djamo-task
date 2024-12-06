@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule, CacheStore } from '@nestjs/cache-manager';
 import {redisStore} from 'cache-manager-redis-store';
 import { ConfigModule } from '@nestjs/config';
-import { TransactionsModule } from './transactions/transactions.module';
+import { TransactionModule } from './transactions/transactions.module';
 import { BullModule } from '@nestjs/bullmq';
+import { IdempotencyMiddleware } from './transactions/idempotency/idempotency.middleware';
+import { IdempotencyService } from './transactions/idempotency/idempotency.service';
+import { TransactionController } from './transactions/transactions.controller';
 
 @Module({
   imports: [
@@ -34,12 +36,20 @@ import { BullModule } from '@nestjs/bullmq';
         port: 6379,
       }
     }),
-    BullModule.registerQueue({
-      name: 'audio',
-    }),
-    TransactionsModule
+    BullModule.registerQueue(
+      { name: process.env.PROCESS_TRX_QUEUE },
+      { name: process.env.UPDATE_TRX_QUEUE }
+    ),
+    TransactionModule,
   ],
   controllers: [AppController],
-  providers: [AppService]
+  providers: [IdempotencyService]
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(IdempotencyMiddleware)
+      //.forRoutes({ path: 'transaction', method: RequestMethod.POST });
+      .forRoutes(TransactionController);
+  }
+}

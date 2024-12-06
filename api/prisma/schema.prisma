@@ -17,5 +17,4 @@ model Transaction {
   id    Int     @default(autoincrement()) @id
   transactionID String  @unique
   status  String
-  process_status String
 }
