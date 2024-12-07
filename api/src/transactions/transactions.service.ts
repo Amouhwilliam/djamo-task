@@ -44,7 +44,7 @@ export class TransactionService {
       Logger.log(`-- RETURN CACHED TRANSACTION ${transactionID} --`)
       return JSON.parse(res)
     }
-      
+
     Logger.log(`-- GETTING TRANSACTION IN DB ${transactionID} --`)
     const trx = await this.prisma.transaction.findUnique({
       where: { transactionID }
@@ -74,23 +74,14 @@ export class TransactionService {
           webhookUrl: `${process.env.BASE_URL}/transaction/webhook`
         },
         loadJobConfig(transactionID)
-       )
+      )
         .then(async () => {
           await this.cacheManager
             .set(`trx-${newTransaction.transactionID}`,
               JSON.stringify(newTransaction),
               { ttl: this.TTL } as any
             );
-            Logger.log(`-- NEW TRX PUSHED TO QUEUE AND CACHED ${transactionID} --`)
-        })
-        .catch((error) => {
-          Logger.error(error.response.data);
-          this.prisma.transaction.delete({
-            where: {
-              id: newTransaction.id
-            }
-          })
-          Logger.log(`-- FAILED TO PUSH TO QUEUE, DELETE PREVIOUS TRX ${transactionID} --`)
+          Logger.log(`-- NEW TRX PUSHED TO QUEUE AND CACHED ${transactionID} --`)
         })
 
       return {
@@ -137,7 +128,7 @@ export class TransactionService {
   ** This function check if there is a pending trx in the db but not in the queue
   ** and enqueue it
   */
-  async getIgnoredTrx(trx: {id: number, transactionID: string, status: string}) {
+  async getIgnoredTrx(trx: { id: number, transactionID: string, status: string }) {
     const job = this.processTrxQueue.getJob(trx.transactionID)
     if (!job) {
       await this.processTrxQueue.add(
@@ -150,6 +141,21 @@ export class TransactionService {
       )
       Logger.log(`-- INSERT EXISTING PENDING TRX IN QUEUE ${trx.transactionID} --`)
     }
+  }
+
+  /*
+  ** Check if the trx is already processed
+  */
+  async checkExistProcessedTrx(id: string) {
+    const exists = await this.prisma.transaction.findFirst({
+      where: {
+        transactionID: id,
+        AND: {
+          status: { in: [STATUS.success, STATUS.failure] },
+        },
+      }
+    })
+    return exists ? true : false;
   }
 
 }

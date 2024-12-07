@@ -20,7 +20,8 @@ export class ProcessTrxConsumer extends WorkerHost {
         if (job.attemptsStarted > 1) {
             this.httpService.axiosRef.get(`${process.env.THIRD_PARTY_URL}/transaction/${job.data.id}`, job.data)
                 .then(async (res) => {
-                    if (res.data) {
+                    if (res.data && res.data.id) {
+                        console.log("return by the check api")
                         await this.transactionService.upsert(res.data)
                         await this.transactionService.notifyUser(res.data)
                     }
@@ -28,7 +29,7 @@ export class ProcessTrxConsumer extends WorkerHost {
                     console.log("transaction not found !")
 
                     const data: TrxInterface = (await this.httpService.axiosRef.post(`${process.env.THIRD_PARTY_URL}/transaction`, job.data)).data
-                    if (data) {
+                    if (data && data.id) {
                         await this.transactionService.upsert(data)
                         await this.transactionService.notifyUser(data)
                     }
@@ -36,7 +37,9 @@ export class ProcessTrxConsumer extends WorkerHost {
         } else {
             const data: TrxInterface = (await this.httpService.axiosRef.post(`${process.env.THIRD_PARTY_URL}/transaction`, job.data)).data
 
-            if (data) {
+            if (data && data.id) {
+                console.log("return directly", data)
+
                 await this.transactionService.upsert(data)
                 await this.transactionService.notifyUser(data)
             }
