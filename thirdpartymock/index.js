@@ -17,7 +17,7 @@ const simulateLatency = (latency) => {
 const sendWebhook = (id) => {
   const { status, webhookUrl } = transactions[id];
   axios
-    .post(webhookUrl, { id, status })
+    .post(webhookUrl, { id, status, webhookUrl })
     .catch(() => console.log(`Could not post webhook for ${id}`));
 };
 

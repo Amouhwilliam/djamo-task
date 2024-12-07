@@ -22,7 +22,7 @@ app.post("/transaction", (_, res) => {
 });
 
 app.put("/transaction", (req, res) => {
-  const { id, status } = req.body.status;
+  const { id, status } = req.body;
   console.log(`Transaction ${id} marked as ${status}`);
   res.send();
 });

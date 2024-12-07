@@ -7,18 +7,25 @@ import {
     Res,
     BadRequestException,
     InternalServerErrorException,
+    Logger,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { TransactionService } from './transactions.service';
 import { CreateTransactionDto } from './dto/createTransaction.dto';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
+import { UpdateTransactionDto } from './dto/updateTransaction.dto';
+import { Queue } from 'bullmq';
+import { InjectQueue } from '@nestjs/bullmq';
+import { loadJobConfig } from 'src/utils/helper';
 
 @Controller('transaction')
 export class TransactionController {
-    constructor(private readonly transactionService: TransactionService) { }
+    constructor(
+        private readonly transactionService: TransactionService,
+        @InjectQueue(process.env.UPDATE_TRX_QUEUE) private readonly updateTrxQueue: Queue,
+    ) { }
 
-    @UseInterceptors(CacheInterceptor)
-    @CacheTTL(30) // override TTL to 30 seconds
+
     @Post()
     async create(@Body() createTransactionDto: CreateTransactionDto, @Res() res: Response) {
         try {
@@ -30,8 +37,16 @@ export class TransactionController {
         }
     }
 
-    @Get()
-    async get() {
-        return "Hello";
+    
+    @Post('/webhook')
+    async webhook(@Body() updateTransactionDto: UpdateTransactionDto) {
+        try {
+            Logger.log(`-- RECEIVED TRX FROM WEBHOOK ${updateTransactionDto.id} --`, updateTransactionDto)
+            await this.updateTrxQueue.add('updateTrx', updateTransactionDto, loadJobConfig(updateTransactionDto.id))     
+            Logger.log(`-- PUSH TO UPDATE TRX JOB ${updateTransactionDto.id} --`)
+        } catch (error) {
+            throw new InternalServerErrorException(error.message);
+        }
     }
 }
+
