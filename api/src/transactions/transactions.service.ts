@@ -68,7 +68,7 @@ export class TransactionService {
 
       // Push into queue
       this.processTrxQueue.add(
-        'processTrx',
+        'process-trx',
         {
           id: transactionID,
           webhookUrl: `${process.env.BASE_URL}/transaction/webhook`
@@ -141,7 +141,7 @@ export class TransactionService {
     const job = this.processTrxQueue.getJob(trx.transactionID)
     if (!job) {
       await this.processTrxQueue.add(
-        'processTrx',
+        'process-trx',
         {
           id: trx.transactionID,
           webhookUrl: `${process.env.BASE_URL}/transaction/webhook`

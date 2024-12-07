@@ -7,7 +7,7 @@ app.use(express.json());
 const port = process.env.PORT || 3000;
 const getResponseLag = () => Math.random() * (10_000 - 200) + 200;
 const getWebhookLag = () => Math.random() * (30_000 - 10_000) + 10_000;
-const getTimeoutLag = () => Math.random() * (120_000 - 30_000) + 30_000;
+const getTimeoutLag = () => Math.random() * (10_000 - 200) + 200;
 const transactions = {};
 
 const simulateLatency = (latency) => {
@@ -27,7 +27,7 @@ app.post("/transaction", (req, res) => {
   const { id, webhookUrl } = req.body;
 
   // 10% of the time, will timeout. Half of the time, the transaction is actually processed.
-  const shouldTimeout = Math.random() < 1 / 10;
+  const shouldTimeout = true//Math.random() < 1 / 10;
   if (shouldTimeout) {
     console.log("Will timeout");
     const shouldWork = Math.random() > 1 / 2;
