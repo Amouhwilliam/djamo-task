@@ -49,6 +49,7 @@ app.post("/transaction", (req, res) => {
   }
   // Return the response otherwise
   simulateLatency(getResponseLag()).then(() => {
+    console.log("here")
     transactions[id].status = status;
     res.send(transactions[id]);
   });

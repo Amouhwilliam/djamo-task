@@ -1,38 +1,39 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# API
+This Project is built with [Nest](https://github.com/nestjs/nest), [Postgres](https://www.postgresql.org/) and [Redis](https://redis.io/).
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Context
+The purpose of this API is to facilitate client transactions while delivering the best possible user experience. It ensures that the client is promptly notified whether their transaction was successful or failed. To achieve this, the API interacts with a third-party service to retrieve the transaction's outcome. However, this third-party service is unreliable: it frequently times out, often takes a significant amount of time to respond, and occasionally requires retries or fallback mechanisms to handle delays effectively.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Solution 
+To enhance the user experience during transactions, our system processes transactions asynchronously. Upon receiving a transaction request, the API responds immediately with a "pending" status, informing the user that they will be notified once the transaction is complete.
 
-## Description
+To implement asynchronous processing, we utilize a job queue powered by BullMQ, with Redis as the underlying data store. Each transaction is queued and processed independently, which helps manage issues encountered with the third-party API, such as timeouts or failures. If a transaction fails, the job is automatically retried. Once the transaction is successfully processed, the database is updated, and the user is notified of the outcome.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+The system processes jobs concurrently, leveraging multiple workers to handle multiple transactions simultaneously. Transaction details are stored in a PostgreSQL database and cached using Redis, ensuring rapid response times when serving transaction results.
 
-## Installation
+To prevent unprocessed transactions from being forgotten, a cron job runs every 5 minutes to identify pending transactions in the database that are not enqueued and processes them. The API is designed to be idempotent, ensuring that duplicate requests are handled gracefully. A middleware caches the transaction response for 5 seconds to return the same response to duplicate requests during this time. Transactions are temporarily cached for 50 seconds after being recorded in the database or successfully processed. This enables the system to deliver rapid responses to repeated transaction requests while avoiding redundant processing.
+
+This non-blocking, asynchronous design abstracts third-party API issues from the client, ensuring a seamless and efficient user experience while maintaining system reliability and performance.
+
+Please find the senquence diagram in the sequence.png file at the root of this folder
+
+## Discussion
+The API currently lacks unit tests and load testing due to time constraints. However, I strongly advocate that a robust API should be thoroughly tested. Every file and piece of code should be covered with comprehensive unit tests to ensure reliability. Additionally, implementing load testing would provide valuable insights into the API's resilience and performance under stressful conditions, helping to identify potential bottlenecks and improve stability.
+
+## Findings
+
+While testing and debuging i find out the third party react quite differently compare to what is stated in the README.md file:
+80% of the time the third party should reply via our webhook  
+
+
+## Running the app
+
+Run the docker compose file at the root of the project to run the whole stack no extra command is needed,
+but if you are willing to run the api separately without docker please follow intructions the below
 
 ```bash
 $ yarn install
 ```
-
-## Running the app
 
 ```bash
 # development
@@ -44,30 +45,3 @@ $ yarn run start:dev
 # production mode
 $ yarn run start:prod
 ```
-
-## Test
-
-```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
-```
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](LICENSE).

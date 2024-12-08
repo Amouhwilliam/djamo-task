@@ -18,6 +18,6 @@ export class IdempotencyService {
     }
 
     async setResponse(key: string, response: CachedValue): Promise<void> {
-        await this.cacheManager.set(`idempotency-key-${key}`, JSON.stringify(response),  {ttl: 15} as any);
+        await this.cacheManager.set(`idempotency-key-${key}`, JSON.stringify(response),  {ttl: 5} as any);
     }
 }

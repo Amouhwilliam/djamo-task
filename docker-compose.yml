@@ -10,8 +10,7 @@ services:
   client:
     build: ./client
     environment:
-      #YOUR_API: "http://192.168.178.105:3200" #"api.djamo.localhost:3200" 192.168.178.99 
-      YOUR_API: http://api:3000 #"api.djamo.localhost:3200" 192.168.178.99 
+      YOUR_API: http://api:3000
     ports:
       - "3100:3100"
 
@@ -21,7 +20,7 @@ services:
     restart: always
     working_dir: /app
     environment:
-      BASE_URL: http://api:3200
+      BASE_URL: http://api:3000
       THIRD_PARTY_URL: http://thirdparty:3000
       CLIENT_URL: http://client:3100
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/djamo?schema=public"
@@ -53,7 +52,7 @@ services:
       POSTGRES_DB: "djamo"
     volumes:
       - data:/var/lib/postgres 
-      - ./api/prisma/migrations/20241206141213_init:/docker-entrypoint-initdb.d
+      - ./api/prisma/migrations/20241206141213_init:/docker-entrypoint-initdb.d # migrate db
     ports:
       - "5432:5432"
    

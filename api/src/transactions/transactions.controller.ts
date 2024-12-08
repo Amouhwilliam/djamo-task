@@ -41,8 +41,9 @@ export class TransactionController {
     @Post('/webhook')
     async webhook(@Body() updateTransactionDto: UpdateTransactionDto) {
         try {
+            Logger.log(`-- RECEIVED TRX FROM WEBHOOK ${updateTransactionDto.id} --`)
             if(!this.transactionService.checkExistProcessedTrx(updateTransactionDto.id)){
-                Logger.log(`-- RECEIVED TRX FROM WEBHOOK ${updateTransactionDto.id} --`)
+                
                 await this.updateTrxQueue.add('update-trx', updateTransactionDto, loadJobConfig(updateTransactionDto.id)) 
                 Logger.log(`-- PUSH TO UPDATE TRX JOB ${updateTransactionDto.id} --`)    
             }
