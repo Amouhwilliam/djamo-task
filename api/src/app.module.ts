@@ -8,8 +8,6 @@ import { BullModule } from '@nestjs/bullmq';
 import { IdempotencyMiddleware } from './utils/idempotency/idempotency.middleware';
 import { IdempotencyService } from './utils/idempotency/idempotency.service';
 import { TransactionController } from './transactions/transactions.controller';
-import { ScheduleModule } from '@nestjs/schedule';
-import { ClockWorkService } from './utils/scheduler/clockWork.service';
 
 @Module({
   imports: [
@@ -38,10 +36,9 @@ import { ClockWorkService } from './utils/scheduler/clockWork.service';
       }
     }),
     TransactionModule,
-    ScheduleModule.forRoot()
   ],
   controllers: [],
-  providers: [IdempotencyService, ClockWorkService]
+  providers: [IdempotencyService]
 })
 export class AppModule {
   configure(consumer: MiddlewareConsumer) {

@@ -9,14 +9,15 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { log } from 'console';
 import { UpdateTransactionDto } from './dto/updateTransaction.dto';
 import { HttpService } from '@nestjs/axios';
-import { TrxInterface } from './dto/interfaces';
+import { Transaction, TrxInterface } from './dto/interfaces';
 import { catchError, firstValueFrom } from 'rxjs';
 import { AxiosError } from 'axios';
 import { loadJobConfig } from 'src/utils/helper';
+import { Interval } from '@nestjs/schedule';
 
 @Injectable()
 export class TransactionService {
-  private readonly TTL = 60
+  private readonly TTL = 50
 
   constructor(
     @InjectQueue(process.env.PROCESS_TRX_QUEUE) private readonly processTrxQueue: Queue,
@@ -54,12 +55,12 @@ export class TransactionService {
     if (trx) {
       //Check if the trx is pending but not in the queue, if so push it to the Queue
       if (trx.status == STATUS.pending) {
-        await this.getIgnoredTrx(trx)
+        await this.processIgnoredTrx(trx)
       }
       return trx
 
     } else {
-      const newTransaction = await this.prisma.transaction.create({
+      const newTransaction: Transaction = await this.prisma.transaction.create({
         data: {
           transactionID,
           status: STATUS.pending
@@ -119,14 +120,6 @@ export class TransactionService {
 
   async notifyUser(trx: UpdateTransactionDto) {
     Logger.log(`-- START SENDING NOTIFICATION TO CLIENT ${trx.id} --`, trx)
-    /*await firstValueFrom(
-      this.httpService.put<TrxInterface>(`${process.env.CLIENT_URL}/transaction`, trx).pipe(
-        catchError((error: AxiosError) => {
-          Logger.error(error.response.data);
-          throw new Error(error.message);
-        }),
-      )
-    )*/
     await this.httpService.axiosRef.put(`${process.env.CLIENT_URL}/transaction`, trx)
     Logger.log("Notification sent successfully", trx.id)
   }
@@ -135,7 +128,7 @@ export class TransactionService {
   ** This function check if there is a pending trx in the db but not in the queue
   ** and enqueue it
   */
-  async getIgnoredTrx(trx: { id: number, transactionID: string, status: string }) {
+  async processIgnoredTrx(trx: Transaction) {
     const job = this.processTrxQueue.getJob(trx.transactionID)
     if (!job) {
       await this.processTrxQueue.add(
@@ -158,11 +151,33 @@ export class TransactionService {
       where: {
         transactionID: id,
         AND: {
-          status: { in: [STATUS.success, STATUS.failure] },
+          status: { in: [STATUS.completed, STATUS.declined] },
         },
       }
     })
     return exists ? true : false;
+  }
+
+  /*
+  ** Check every 10 min if there is some pending unprocessed transaction 
+  ** and enqueue them 
+  ** this task can be resource consuming 
+  ** and need to be re-thought 
+  */
+  @Interval(2 * 1 * 1000)
+  async enqueueIgnoredTrx() {
+    try{
+      const transactions = await this.prisma.transaction.findMany({
+        where: { status: STATUS.pending },
+      });
+      if(transactions && transactions.length > 0){
+        transactions.map(async (trx: Transaction)=>{
+          await this.processIgnoredTrx(trx)
+        })
+      }
+    }catch(e){
+      Logger.error(e)
+    }
   }
 
 }

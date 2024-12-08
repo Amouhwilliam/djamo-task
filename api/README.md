@@ -11,20 +11,34 @@ To implement asynchronous processing, we utilize a job queue powered by BullMQ, 
 
 The system processes jobs concurrently, leveraging multiple workers to handle multiple transactions simultaneously. Transaction details are stored in a PostgreSQL database and cached using Redis, ensuring rapid response times when serving transaction results.
 
-To prevent unprocessed transactions from being forgotten, a cron job runs every 5 minutes to identify pending transactions in the database that are not enqueued and processes them. The API is designed to be idempotent, ensuring that duplicate requests are handled gracefully. A middleware caches the transaction response for 5 seconds to return the same response to duplicate requests during this time. Transactions are temporarily cached for 50 seconds after being recorded in the database or successfully processed. This enables the system to deliver rapid responses to repeated transaction requests while avoiding redundant processing.
+To prevent unprocessed transactions from being forgotten, a cron job runs every 2 minutes to identify pending transactions in the database that are not enqueued and processes them. The API is designed to be idempotent, ensuring that duplicate requests are handled gracefully. A middleware caches the transaction response for 5 seconds to return the same response to duplicate requests during this time. Transactions are temporarily cached for 50 seconds after being recorded in the database or successfully processed. This enables the system to deliver rapid responses to repeated transaction requests while avoiding redundant processing.
 
 This non-blocking, asynchronous design abstracts third-party API issues from the client, ensuring a seamless and efficient user experience while maintaining system reliability and performance.
 
-Please find the senquence diagram in the sequence.png file at the root of this folder
+Please find the senquence diagram in the sequence-diagram.png file at the root of this folder
 
 ## Discussion
 The API currently lacks unit tests and load testing due to time constraints. However, I strongly advocate that a robust API should be thoroughly tested. Every file and piece of code should be covered with comprehensive unit tests to ensure reliability. Additionally, implementing load testing would provide valuable insights into the API's resilience and performance under stressful conditions, helping to identify potential bottlenecks and improve stability.
 
+The CronJob task in our case could become resource-intensive if we process billions of transactions daily, as it involves fetching pending transactions and verifying whether they are already enqueued. To optimize this, reducing the interval time could help minimize the backlog of unprocessed or failed data. Alternatively, implementing an efficient pagination strategy could offer a more scalable and elegant solution. However, it's important to note that this fallback mechanism is primarily designed to ensure no transactions are missed, as the queues themselves are fast and reliable for normal operations.
+
 ## Findings
 
-While testing and debuging i find out the third party react quite differently compare to what is stated in the README.md file:
-80% of the time the third party should reply via our webhook  
+- While testing and debuging i find out the third party api reacts quite differently compare to what is stated in the README.md file:
+80% of the time when it does not timeout, the third party api should reply via our webhook and 20% reply directly but it actually alway replies
+both ways because the promise is not return when it has to call the webhook
 
+- the client app has a "bug" at the line 25.   
+```bash
+const { id, status } = req.body.status;
+```
+which I correct to
+```bash
+const { id, status } = req.body;
+```
+
+Again those are just findings, maybe the third party is designed that way as it mimic a very unreliable app ;)
+either the api is designed to handle them. 
 
 ## Running the app
 

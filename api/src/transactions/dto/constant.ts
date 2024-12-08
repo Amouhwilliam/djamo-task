@@ -1,5 +1,5 @@
 export enum STATUS {
-    success = "success",
-    failure = "failure",
+    completed = "completed",
+    declined = "declined",
     pending = "pending"
 }

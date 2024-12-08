@@ -3,3 +3,9 @@ export interface TrxInterface {
     status: string
     webhookUrl: string
 }
+
+export interface Transaction {
+    id: number
+    transactionID: string
+    status: string
+}

@@ -5,6 +5,7 @@ import { PrismaModule } from 'src/utils/prisma/prisma.module';
 import { BullModule } from '@nestjs/bullmq';
 import { HttpModule } from '@nestjs/axios';
 import { ProcessTrxConsumer, UpdateTrxConsumer } from './transaction.consumers';
+import { ScheduleModule } from '@nestjs/schedule';
 @Module({
   imports:  [
     PrismaModule,
@@ -20,6 +21,7 @@ import { ProcessTrxConsumer, UpdateTrxConsumer } from './transaction.consumers';
       { name: process.env.PROCESS_TRX_QUEUE },
       { name: process.env.UPDATE_TRX_QUEUE }
     ),
+    ScheduleModule.forRoot()
   ],
   controllers: [TransactionController],
   providers: [TransactionService, ProcessTrxConsumer, UpdateTrxConsumer],
