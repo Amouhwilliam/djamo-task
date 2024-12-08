@@ -2,8 +2,6 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { HttpService } from '@nestjs/axios';
 import { Logger } from '@nestjs/common';
-import { catchError, firstValueFrom } from 'rxjs';
-import { AxiosError } from 'axios';
 import { TransactionService } from './transactions.service';
 import { TrxInterface } from './dto/interfaces';
 
@@ -21,13 +19,12 @@ export class ProcessTrxConsumer extends WorkerHost {
             this.httpService.axiosRef.get(`${process.env.THIRD_PARTY_URL}/transaction/${job.data.id}`, job.data)
                 .then(async (res) => {
                     if (res.data && res.data.id) {
-                        console.log("return by the check api")
                         await this.transactionService.upsert(res.data)
                         await this.transactionService.notifyUser(res.data)
                     }
                 }).catch(async () => {
                     console.log("transaction not found !")
-
+                    // if the trx is not already processed in the thirdPartyApi, Re-do the request
                     const data: TrxInterface = (await this.httpService.axiosRef.post(`${process.env.THIRD_PARTY_URL}/transaction`, job.data)).data
                     if (data && data.id) {
                         await this.transactionService.upsert(data)
@@ -36,10 +33,7 @@ export class ProcessTrxConsumer extends WorkerHost {
                 })
         } else {
             const data: TrxInterface = (await this.httpService.axiosRef.post(`${process.env.THIRD_PARTY_URL}/transaction`, job.data)).data
-
             if (data && data.id) {
-                console.log("return directly", data)
-
                 await this.transactionService.upsert(data)
                 await this.transactionService.notifyUser(data)
             }

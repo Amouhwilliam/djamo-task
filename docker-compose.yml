@@ -10,7 +10,8 @@ services:
   client:
     build: ./client
     environment:
-      YOUR_API: "http://192.168.178.105:3200" #"api.djamo.localhost:3200" 192.168.178.99 
+      #YOUR_API: "http://192.168.178.105:3200" #"api.djamo.localhost:3200" 192.168.178.99 
+      YOUR_API: http://api:3000 #"api.djamo.localhost:3200" 192.168.178.99 
     ports:
       - "3100:3100"
 
@@ -20,9 +21,9 @@ services:
     restart: always
     working_dir: /app
     environment:
-      BASE_URL: "http://192.168.178.105:3200"
-      THIRD_PARTY_URL: "http://192.168.178.105:3000"
-      CLIENT_URL: "http://192.168.178.105:3100"
+      BASE_URL: http://api:3200
+      THIRD_PARTY_URL: http://thirdparty:3000
+      CLIENT_URL: http://client:3100
       DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/djamo?schema=public"
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -41,8 +42,6 @@ services:
     volumes:
       - ./api:/app
     command: bash -c "yarn && yarn start:dev"
-    labels:
-      - "traefik.http.routers.api.rule=Host(`api.djamo.localhost`)"
 
   postgres:
     image: postgres
@@ -96,15 +95,6 @@ services:
       - REDIS_HOSTS=local:redis:6379
     ports:
       - "8081:8081"
-
-  traefik:
-    container_name: traefik
-    image: traefik:v2.5
-    command: --api.insecure=true --providers.docker
-    ports:
-      - "80:80"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
 
 volumes:
   data:

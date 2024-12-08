@@ -45,11 +45,11 @@ export class TransactionService {
       return JSON.parse(res)
     }
 
-    Logger.log(`-- GETTING TRANSACTION IN DB ${transactionID} --`)
     const trx = await this.prisma.transaction.findUnique({
       where: { transactionID }
     })
-    Logger.log(`-- RECEIVE TRANSACTION IN DB ${transactionID} --`, trx)
+
+    Logger.log(`-- TRANSACTION RETRIEVED IN DB ${transactionID} --`, trx)
 
     if (trx) {
       //Check if the trx is pending but not in the queue, if so push it to the Queue
@@ -57,6 +57,7 @@ export class TransactionService {
         await this.getIgnoredTrx(trx)
       }
       return trx
+
     } else {
       const newTransaction = await this.prisma.transaction.create({
         data: {
@@ -64,6 +65,7 @@ export class TransactionService {
           status: STATUS.pending
         }
       });
+
       Logger.log(`-- CREATE TRX IN DB ${transactionID} --`, newTransaction)
 
       // Push into queue
@@ -81,6 +83,7 @@ export class TransactionService {
               JSON.stringify(newTransaction),
               { ttl: this.TTL } as any
             );
+
           Logger.log(`-- NEW TRX PUSHED TO QUEUE AND CACHED ${transactionID} --`)
         })
 
@@ -93,6 +96,7 @@ export class TransactionService {
 
   async upsert(trx: UpdateTransactionDto) {
     Logger.log(`-- START UPDATING OLD TRX WITH NEW DATA FROM QUEUE ${trx.id} --`)
+
     // upsert insted of update because if by any chance this trx was not in the db it will get create
     const upsertTrx = await this.prisma.transaction.upsert({
       where: {
@@ -106,21 +110,24 @@ export class TransactionService {
         status: trx.status
       },
     })
+
     Logger.log(`-- UPDATE TRX IN DB ${upsertTrx.transactionID} --`, upsertTrx)
     await this.cacheManager.set(`trx-${upsertTrx.transactionID}`, JSON.stringify(upsertTrx), { ttl: this.TTL } as any);
+
     Logger.log(`-- SET UPDATED TRX IN CACHE ${upsertTrx.transactionID} --`, upsertTrx)
   }
 
   async notifyUser(trx: UpdateTransactionDto) {
     Logger.log(`-- START SENDING NOTIFICATION TO CLIENT ${trx.id} --`, trx)
-    await firstValueFrom(
+    /*await firstValueFrom(
       this.httpService.put<TrxInterface>(`${process.env.CLIENT_URL}/transaction`, trx).pipe(
         catchError((error: AxiosError) => {
           Logger.error(error.response.data);
           throw new Error(error.message);
         }),
-      ),
-    )
+      )
+    )*/
+    await this.httpService.axiosRef.put(`${process.env.CLIENT_URL}/transaction`, trx)
     Logger.log("Notification sent successfully", trx.id)
   }
 
