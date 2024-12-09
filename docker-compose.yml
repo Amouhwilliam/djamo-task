@@ -40,7 +40,7 @@ services:
       - redis
     volumes:
       - ./api:/app
-    command: bash -c "yarn && yarn start:prod"
+    command: bash -c "yarn && yarn build && yarn start:prod"
 
   postgres:
     image: postgres
