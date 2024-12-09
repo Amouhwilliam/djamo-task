@@ -1,4 +1,4 @@
-name: take-home-test
+name: djamo-take-home-test
 
 services:
 
@@ -40,7 +40,7 @@ services:
       - redis
     volumes:
       - ./api:/app
-    command: bash -c "yarn && yarn start:dev"
+    command: bash -c "yarn && yarn start:prod"
 
   postgres:
     image: postgres
@@ -56,26 +56,6 @@ services:
     ports:
       - "5432:5432"
    
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    restart: always
-    links:
-      - postgres
-    depends_on:
-      - postgres
-    environment:
-      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
-      PGADMIN_DEFAULT_PASSWORD: "root"
-      PG_HOST: postgres
-      PG_PORT: 5432
-      PG_USER: "postgres"
-      PG_PASSWORD: "postgres"
-      PG_DB_NAME: "djamo"
-      DB_CONNECTION: "pg"
-    ports:
-      - "8000:80"
-
   redis:
     image: redis:alpine
     container_name: redis
@@ -85,15 +65,6 @@ services:
     command: redis-server --save 20 1 --loglevel warning
     volumes:
       - cache:/data
-
-  redis-commander:
-    image: ghcr.io/joeferner/redis-commander:latest
-    container_name: redis-commander
-    restart: always
-    environment:
-      - REDIS_HOSTS=local:redis:6379
-    ports:
-      - "8081:8081"
 
 volumes:
   data:

@@ -13,7 +13,7 @@ import { ScheduleModule } from '@nestjs/schedule';
       useFactory: () => ({
         //will timeout the request to the third party after 10s waiting 
         //and reprocess the job (offering 90% of chnace of no timeout case)
-        timeout: 10000,
+        timeout: 10_000,
         maxRedirects: 3,
       }),
     }),

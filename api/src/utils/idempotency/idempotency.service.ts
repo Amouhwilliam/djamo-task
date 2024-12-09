@@ -7,7 +7,7 @@ interface CachedValue {
     value: string
 }
 
-// This service cached the idempotency key for 15s
+// This service cached the idempotency key for 5s
 @Injectable()
 export class IdempotencyService {
     constructor(@Inject(CACHE_MANAGER) private cacheManager: Cache) { }

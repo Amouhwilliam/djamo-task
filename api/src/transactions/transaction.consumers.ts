@@ -12,8 +12,6 @@ export class ProcessTrxConsumer extends WorkerHost {
     }
 
     async process(job: Job<any, any, string>): Promise<any> {
-        Logger.log(`-- START PROCCESS_TRX JOB ${job.data.id} --`, job.data)
-
         //check first if the transaction is already processed im case of timeout
         if (job.attemptsStarted > 1) {
             this.httpService.axiosRef.get(`${process.env.THIRD_PARTY_URL}/transaction/${job.data.id}`, job.data)
@@ -54,7 +52,6 @@ export class UpdateTrxConsumer extends WorkerHost {
 
     async process(job: Job<any, any, string>): Promise<any> {
         if (job.data) {
-            Logger.log(`-- START UPDATE TRX JOB ${job.data.id} --`)
             await this.transactionService.upsert(job.data)
             await this.transactionService.notifyUser(job.data)
         }

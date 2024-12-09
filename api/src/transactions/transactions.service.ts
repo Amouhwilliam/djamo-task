@@ -32,29 +32,23 @@ export class TransactionService {
    * @returns 
    */
   async create(data: CreateTransactionDto) {
+
     const transactionID = data.id
-
-    // implementation Tracing
-    Logger.log(`-- START TRANSACTION ${transactionID} --`)
-
-    const res: string = await this.cacheManager.get(`trx-${transactionID}`);
+    const res: Transaction = JSON.parse(await this.cacheManager.get(`trx-${transactionID}`));
     if (res) {
-      Logger.log(`-- RETURN CACHED TRANSACTION ${transactionID} --`)
-      return JSON.parse(res)
+      return {...res, id: res.transactionID}
     }
 
     const trx = await this.prisma.transaction.findUnique({
       where: { transactionID }
     })
 
-    Logger.log(`-- TRANSACTION RETRIEVED IN DB ${transactionID} --`, trx)
-
     if (trx) {
       //Check if the trx is pending but not in the queue, if so push it to the Queue
       if (trx.status == STATUS.pending) {
         await this.processIgnoredTrx(trx)
       }
-      return trx
+      return {...trx, id: trx.transactionID}
 
     } else {
       const newTransaction: Transaction = await this.prisma.transaction.create({
@@ -63,8 +57,6 @@ export class TransactionService {
           status: STATUS.pending
         }
       });
-
-      Logger.log(`-- CREATE TRX IN DB ${transactionID} --`, newTransaction)
 
       // Push into queue
       this.processTrxQueue.add(
@@ -81,8 +73,6 @@ export class TransactionService {
               JSON.stringify(newTransaction),
               { ttl: this.TTL } as any
             );
-
-          Logger.log(`-- NEW TRX PUSHED TO QUEUE AND CACHED ${transactionID} --`)
         })
 
       return {
@@ -93,7 +83,6 @@ export class TransactionService {
   }
 
   async upsert(trx: UpdateTransactionDto) {
-    Logger.log(`-- START UPDATING OLD TRX WITH NEW DATA FROM QUEUE ${trx.id} --`)
 
     // upsert insted of update because if by any chance this trx was not in the db it will get create
     const upsertTrx = await this.prisma.transaction.upsert({
@@ -109,16 +98,11 @@ export class TransactionService {
       },
     })
 
-    Logger.log(`-- UPDATE TRX IN DB ${upsertTrx.transactionID} --`, upsertTrx)
     await this.cacheManager.set(`trx-${upsertTrx.transactionID}`, JSON.stringify(upsertTrx), { ttl: this.TTL } as any);
-
-    Logger.log(`-- SET UPDATED TRX IN CACHE ${upsertTrx.transactionID} --`, upsertTrx)
   }
 
   async notifyUser(trx: UpdateTransactionDto) {
-    Logger.log(`-- START SENDING NOTIFICATION TO CLIENT ${trx.id} --`, trx)
     await this.httpService.axiosRef.put(`${process.env.CLIENT_URL}/transaction`, trx)
-    Logger.log("Notification sent successfully", trx.id)
   }
 
   /*
@@ -136,7 +120,6 @@ export class TransactionService {
         },
         loadJobConfig(trx.transactionID)
       )
-      Logger.log(`-- INSERT EXISTING PENDING TRX IN QUEUE ${trx.transactionID} --`)
     }
   }
 

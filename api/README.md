@@ -16,7 +16,7 @@ To prevent unprocessed transactions from being forgotten, a cron job runs every 
 This non-blocking, asynchronous design abstracts third-party API issues from the client, ensuring a seamless and efficient user experience while maintaining system reliability and performance.
 
 Please find the senquence diagram in the sequence-diagram.png file at the root of this folder
-In this version is the most cleaned and lightweight version of the project if you want to have tools to check db, the queues or the caches or also have acces to a custom tracing system implemented with logs, please run this tag:
+In this version is the most cleaned and lightweight version of the project if you want to have tools to check db, the queues or the caches or also have acces to a custom tracing system implemented with logs, please run this tag: dev-version
 
 ## Discussion
 The API currently lacks unit tests and load testing due to time constraints. However, I strongly advocate that a robust API should be thoroughly tested. Every file and piece of code should be covered with comprehensive unit tests to ensure reliability. Additionally, implementing load testing would provide valuable insights into the API's resilience and performance under stressful conditions, helping to identify potential bottlenecks and improve stability.
