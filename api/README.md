@@ -16,6 +16,7 @@ To prevent unprocessed transactions from being forgotten, a cron job runs every 
 This non-blocking, asynchronous design abstracts third-party API issues from the client, ensuring a seamless and efficient user experience while maintaining system reliability and performance.
 
 Please find the senquence diagram in the sequence-diagram.png file at the root of this folder
+In this version is the most cleaned and lightweight version of the project if you want to have tools to check db, the queues or the caches or also have acces to a custom tracing system implemented with logs, please run this tag:
 
 ## Discussion
 The API currently lacks unit tests and load testing due to time constraints. However, I strongly advocate that a robust API should be thoroughly tested. Every file and piece of code should be covered with comprehensive unit tests to ensure reliability. Additionally, implementing load testing would provide valuable insights into the API's resilience and performance under stressful conditions, helping to identify potential bottlenecks and improve stability.
@@ -25,20 +26,19 @@ The CronJob task in our case could become resource-intensive if we process billi
 ## Findings
 
 - While testing and debuging i find out the third party api reacts quite differently compare to what is stated in the README.md file:
-80% of the time when it does not timeout, the third party api should reply via our webhook and 20% reply directly but it actually alway replies
-both ways because the promise is not return when it has to call the webhook
-
-- the client app has a "bug" at the line 25.   
-```bash
-const { id, status } = req.body.status;
-```
-which I correct to
-```bash
-const { id, status } = req.body;
-```
+80% of the time when it does not timeout, the third party api should reply via our webhook and the rest reply directly but it actually alway replies both ways.
 
 Again those are just findings, maybe the third party is designed that way as it mimic a very unreliable app ;)
 either the api is designed to handle them. 
+
+- the client app has a potential "bug" at the line 25.   
+```bash
+const { id, status } = req.body.status;
+```
+which I replaced which
+```bash
+const { id, status } = req.body;
+```
 
 ## Running the app
 

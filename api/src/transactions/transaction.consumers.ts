@@ -25,10 +25,14 @@ export class ProcessTrxConsumer extends WorkerHost {
                 }).catch(async () => {
                     console.log("transaction not found !")
                     // if the trx is not already processed in the thirdPartyApi, Re-do the request
-                    const data: TrxInterface = (await this.httpService.axiosRef.post(`${process.env.THIRD_PARTY_URL}/transaction`, job.data)).data
-                    if (data && data.id) {
-                        await this.transactionService.upsert(data)
-                        await this.transactionService.notifyUser(data)
+                    try {
+                        const data: TrxInterface = (await this.httpService.axiosRef.post(`${process.env.THIRD_PARTY_URL}/transaction`, job.data)).data
+                        if (data && data.id) {
+                            await this.transactionService.upsert(data)
+                            await this.transactionService.notifyUser(data)
+                        }
+                    } catch (error) {
+                        Logger.error(error)
                     }
                 })
         } else {

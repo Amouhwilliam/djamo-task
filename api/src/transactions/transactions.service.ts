@@ -6,12 +6,9 @@ import { PrismaService } from 'src/utils/prisma/prisma.service';
 import { STATUS } from './dto/constant';
 import { Queue } from 'bullmq';
 import { InjectQueue } from '@nestjs/bullmq';
-import { log } from 'console';
 import { UpdateTransactionDto } from './dto/updateTransaction.dto';
 import { HttpService } from '@nestjs/axios';
-import { Transaction, TrxInterface } from './dto/interfaces';
-import { catchError, firstValueFrom } from 'rxjs';
-import { AxiosError } from 'axios';
+import { Transaction } from './dto/interfaces';
 import { loadJobConfig } from 'src/utils/helper';
 import { Interval } from '@nestjs/schedule';
 
