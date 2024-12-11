@@ -139,10 +139,9 @@ export class TransactionService {
   }
 
   /*
-  ** Check every 10 min if there is some pending unprocessed transaction 
+  ** Check every 2 min if there is some pending unprocessed transaction 
   ** and enqueue them 
   ** this task can be resource consuming 
-  ** and need to be re-thought 
   */
   @Interval(2 * 1 * 1000)
   async enqueueIgnoredTrx() {
