@@ -25,7 +25,7 @@ import { TransactionController } from './transactions/transactions.controller';
 
         return {
           store: store as unknown as CacheStore,
-          ttl: 5 * 60000, // 5 minutes (milliseconds)
+          ttl: 5 * 60000, // 5 minutes to update or remove in production
         };
       },
     }),
